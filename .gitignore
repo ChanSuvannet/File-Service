@@ -1,0 +1,38 @@
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Binary
+bin/
+
+# Go workspace files
+*.vscode/
+.idea/
+.DS_Store
+
+# Go test binary
+*_test.go
+
+# Vendor folder (if using Go modules)
+vendor/
+
+# Go modules and dependencies
+go.sum
+go.mod
+
+# Log files
+*.log
+
+# IDE files
+*.swp
+*.swo
+
+# Coverage files
+*.out
+*.cover
+
+# Environment variable files
+.env
