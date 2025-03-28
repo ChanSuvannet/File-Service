@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"my-project/middleware"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,7 +16,7 @@ func SetupFileRoutes(router *gin.RouterGroup) {
 	router.GET("/:filename", fileController.Read)
 
 	// Route for single file upload (commented out for now)
-	// router.POST("/upload-single", middleware.SingleFileMulter(), fileController.Upload)
+	router.POST("/upload-single", middleware.SingleFileMulter(), fileController.Upload)
 
 	// Route for base64 upload with validation (commented out for now)
 	// router.POST("/upload-base64", validation.UploadValidation(), fileController.Base64Upload)

@@ -6,10 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// SetupRoutes sets up the main routes of the application
-func SetupRoutes(router *gin.Engine) {
+func SetupRoutes(api *gin.RouterGroup) {
 	// File Route Group
-	fileRouter := router.Group("/file")
+	fileRouter := api.Group("/file")
 	{
 		// File-related routes
 		controller.SetupFileRoutes(fileRouter)

@@ -64,36 +64,30 @@ func main() {
 	// Global error handler
 	r.Use(errorHandler)
 
-	// Serve static files from ./public at /public
-	r.Static("/public", "./public")
-
 	// Load HTML templates
 	r.LoadHTMLFiles(filepath.Join("view", "index.html"))
 
 	// Root route to render HTML
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(200, "index.html", gin.H{
-			"title": "My Page", // Optional dynamic data
+			"title": "File Upload",
 		})
 	})
 
-	// Simple API endpoint
-	r.GET("/api", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Welcome to the API",
-		})
-	})
+	// Group API routes under /api
+	api := r.Group("/api", errorHandler)
+	{
+		routes.SetupRoutes(api)
+	}
 
 	// Custom 404 handler
 	r.NoRoute(notFoundHandler)
-	r.Use(errorHandler)
-	// Import other routes
-	routes.SetupRoutes(r)
 
 	// Run server on port from env or default to 8080
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
+	fmt.Printf("🚀 Application running on: http://localhost:%s\n", port)
 	r.Run(":" + port)
 }

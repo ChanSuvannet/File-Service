@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"io/ioutil"
+	"mime/multipart"
 	"my-project/service"
 	"net/http"
 	"os"
@@ -29,19 +30,28 @@ func (fc *FileController) Read(c *gin.Context) {
 
 // Upload handles the POST request for uploading a file
 func (fc *FileController) Upload(c *gin.Context) {
-	// file, err := c.FormFile("file")
-	// if err != nil {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file"})
-	// 	return
-	// }
+	// Retrieve file from middleware
+	file, exists := c.Get("uploadedFile")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "File not found in context"})
+		return
+	}
 
-	// url, err := service.UploadFile(file)
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	// 	return
-	// }
+	// Convert to expected type
+	fileHeader, ok := file.(*multipart.FileHeader)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process file"})
+		return
+	}
 
-	// c.JSON(http.StatusOK, gin.H{"url": url})
+	// Call service to handle file upload
+	url, err := service.UploadFile(fileHeader)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"url": url})
 }
 
 // Base64Upload handles the POST request for uploading a base64 encoded image
