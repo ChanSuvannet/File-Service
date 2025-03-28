@@ -7,6 +7,11 @@
 
 # Binary
 bin/
+# dotenv environment variables file
+.env
+
+# Ignore public/uploads directory
+public/uploads/*
 
 # Go workspace files
 *.vscode/
