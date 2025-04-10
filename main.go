@@ -53,10 +53,10 @@ func errorHandler(c *gin.Context) {
 
 func main() {
 	// Load env variables
-	loadEnv()
+	// loadEnv()
 
 	// Optional: Initialize the database
-	connectDatabase()
+	// connectDatabase()
 
 	// Create a new Gin router
 	r := gin.Default()
