@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"io/ioutil"
-	"mime/multipart"
 	"my-project/service"
 	"net/http"
 	"os"
@@ -30,28 +29,50 @@ func (fc *FileController) Read(c *gin.Context) {
 
 // Upload handles the POST request for uploading a file
 func (fc *FileController) Upload(c *gin.Context) {
-	// Retrieve file from middleware
-	file, exists := c.Get("uploadedFile")
-	if !exists {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "File not found in context"})
-		return
-	}
+    file, err := c.FormFile("file")
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{
+            "error":   "File upload error",
+            "details": err.Error(),
+        })
+        return
+    }
 
-	// Convert to expected type
-	fileHeader, ok := file.(*multipart.FileHeader)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process file"})
-		return
-	}
+    // Validate file size (5MB limit)
+    if file.Size > 5<<20 {
+        c.JSON(http.StatusBadRequest, gin.H{
+            "error": "File size exceeds 5MB limit",
+        })
+        return
+    }
 
-	// Call service to handle file upload
-	url, err := service.UploadFile(fileHeader)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
+    // Create upload directory
+    uploadDir := "public/uploads"
+    if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{
+            "error": "Failed to create upload directory",
+        })
+        return
+    }
 
-	c.JSON(http.StatusOK, gin.H{"url": url})
+    // Generate unique filename
+    fileExt := filepath.Ext(file.Filename)
+    newFilename := uuid.New().String() + fileExt
+    filePath := filepath.Join(uploadDir, newFilename)
+
+    // Save the file
+    if err := c.SaveUploadedFile(file, filePath); err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{
+            "error": "Failed to save file",
+        })
+        return
+    }
+
+    // Return relative path
+    c.JSON(http.StatusOK, gin.H{
+        "message": "File uploaded successfully",
+        "path":    "uploads/" + newFilename,
+    })
 }
 
 // Base64Upload handles the POST request for uploading a base64 encoded image

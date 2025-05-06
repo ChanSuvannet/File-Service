@@ -7,10 +7,8 @@ import (
 )
 
 func SetupRoutes(api *gin.RouterGroup) {
-	// File Route Group
-	fileRouter := api.Group("/file")
-	{
-		// File-related routes
-		controller.SetupFileRoutes(fileRouter)
-	}
+	fileController := new(controller.FileController)
+    
+    api.GET("/file/:filename", fileController.Read)
+    api.POST("/file/upload-single", fileController.Upload) 
 }

@@ -6,8 +6,10 @@ import (
 	"my-project/config"
 	"my-project/database"
 	"my-project/routes"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -54,15 +56,63 @@ func errorHandler(c *gin.Context) {
 	}
 }
 
+func staticFileHandler(c *gin.Context) {
+    path := c.Param("filepath")
+    
+    // If path is an external URL, return it directly
+    if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") {
+        c.JSON(http.StatusOK, gin.H{
+            "url": path,
+            "isExternal": true,
+        })
+        return
+    }
+
+    // Security: Prevent directory traversal
+    if strings.Contains(path, "../") {
+        c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+            "error": "Directory traversal not allowed",
+        })
+        return
+    }
+
+    fullPath := filepath.Join("public", path)
+    
+    if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+        c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
+            "error": "File not found",
+        })
+        return
+    }
+
+    c.File(fullPath)
+}
+
 func main() {
 	// Load env variables
 	loadEnv()
 
 	// Optional: Initialize the database
 	connectDatabase()
+	
 
 	// Create a new Gin router
 	r := gin.Default()
+
+	// Add CORS middleware
+    r.Use(func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization")
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+		
+		c.Next()
+	})
 
 	// Global error handler
 	r.Use(errorHandler)
@@ -82,6 +132,8 @@ func main() {
 	{
 		routes.SetupRoutes(api)
 	}
+
+	r.Static("/public", "./public")
 
 	// Custom 404 handler
 	r.NoRoute(notFoundHandler)

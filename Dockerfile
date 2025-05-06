@@ -1,4 +1,5 @@
 # Dockerfile
+
 FROM golang:1.20 AS builder
 
 WORKDIR /app
@@ -16,5 +17,7 @@ COPY --from=builder /app/app .
 COPY view /app/view
 
 EXPOSE 8080
+
+CMD ["/app/app"]
 
 CMD ["/app/app"]
