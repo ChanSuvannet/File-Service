@@ -18,8 +18,11 @@ import (
 
 // Load environment variables from .env file
 func loadEnv() {
-	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
+	// Only load .env file if not running inside Docker
+	if os.Getenv("ENV") != "production" {
+		if err := godotenv.Load(); err != nil {
+			log.Println("⚠️ Could not load .env file, using system environment")
+		}
 	}
 }
 
