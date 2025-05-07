@@ -23,57 +23,31 @@ func (fc *FileController) Read(c *gin.Context) {
 
 	if err := service.ReadFile(filename, download, c); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
 	}
 }
 
+
 // Upload handles the POST request for uploading a file
 func (fc *FileController) Upload(c *gin.Context) {
-    file, err := c.FormFile("file")
-    if err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{
-            "error":   "File upload error",
-            "details": err.Error(),
-        })
-        return
-    }
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "File not provided"})
+		return
+	}
 
-    // Validate file size (5MB limit)
-    if file.Size > 5<<20 {
-        c.JSON(http.StatusBadRequest, gin.H{
-            "error": "File size exceeds 5MB limit",
-        })
-        return
-    }
+	// Use the service to save file and metadata
+	result, err := service.UploadFile(file)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 
-    // Create upload directory
-    uploadDir := "public/uploads"
-    if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{
-            "error": "Failed to create upload directory",
-        })
-        return
-    }
-
-    // Generate unique filename
-    fileExt := filepath.Ext(file.Filename)
-    newFilename := uuid.New().String() + fileExt
-    filePath := filepath.Join(uploadDir, newFilename)
-
-    // Save the file
-    if err := c.SaveUploadedFile(file, filePath); err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{
-            "error": "Failed to save file",
-        })
-        return
-    }
-
-    // Return relative path
-    c.JSON(http.StatusOK, gin.H{
-        "message": "File uploaded successfully",
-        "path":    "uploads/" + newFilename,
-    })
+	c.JSON(http.StatusOK, gin.H{
+		"file": result,
+	})
 }
+
+
 
 // Base64Upload handles the POST request for uploading a base64 encoded image
 func (fc *FileController) Base64Upload(c *gin.Context) {
