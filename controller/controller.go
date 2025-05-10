@@ -47,6 +47,50 @@ func (fc *FileController) Upload(c *gin.Context) {
 	})
 }
 
+// For Controller Upload and Get Product Image
+
+// Function to handle get all file from database
+func (fc *FileController) GetProductImage(c *gin.Context) {
+	filename := c.Param("filename")
+
+	// Construct full path
+	fullPath := filepath.Join("public", "uploads", "products", filename)
+
+	// Security: Prevent directory traversal
+	if strings.Contains(filename, "../") {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Invalid filename"})
+		return
+	}
+
+	// Check if the file exists
+	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Image not found"})
+		return
+	}
+
+	// Serve the file
+	c.File(fullPath)
+}
+
+
+// UploadProductImage handles product image uploads specifically
+func (fc *FileController) UploadProductImage(c *gin.Context) {
+	file, err := c.FormFile("product_image")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "File not provided"})
+		return
+	}
+
+	filename, err := service.UploadProductImage(file)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"file": filename,
+	})
+}
 
 
 // Base64Upload handles the POST request for uploading a base64 encoded image
