@@ -110,7 +110,7 @@ func UploadProductImage(file *multipart.FileHeader) (map[string]interface{}, err
 	}
 
 	// Generate a unique file name without extension
-	fileName := uuid.New().String() // No file extension added here
+	fileName := uuid.New().String() + filepath.Ext(file.Filename) // Include extension
 	filePath := filepath.Join(uploadFolder, fileName)
 
 	// Open the uploaded file
@@ -157,4 +157,5 @@ func UploadProductImage(file *multipart.FileHeader) (map[string]interface{}, err
 
 	return response, nil
 }
+
 

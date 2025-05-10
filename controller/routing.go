@@ -22,7 +22,7 @@ func SetupFileRoutes(router *gin.RouterGroup) {
 	router.GET("/product/image/:filename", fileController.GetProductImage)
 
 	// Route for product image upload (commented out for now)
-	router.POST("/product/upload-image", fileController.UploadProductImage)
+	router.POST("/product/upload-image", fileController.UploadProductImages)
 
 	// Route for base64 upload with validation (commented out for now)
 	// router.POST("/upload-base64", validation.UploadValidation(), fileController.Base64Upload)

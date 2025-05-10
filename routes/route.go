@@ -13,5 +13,5 @@ func SetupRoutes(api *gin.RouterGroup) {
     api.POST("/file/upload-single", fileController.Upload) 
 
 	api.GET("/file/product/image/:filename", fileController.GetProductImage)
-	api.POST("/file/product/upload-image", fileController.UploadProductImage)
+	api.POST("/file/product/upload-image", fileController.UploadProductImages)
 }
