@@ -74,23 +74,35 @@ func (fc *FileController) GetProductImage(c *gin.Context) {
 
 
 // UploadProductImage handles product image uploads specifically
-func (fc *FileController) UploadProductImage(c *gin.Context) {
-	file, err := c.FormFile("product_image")
+// UploadProductImages handles multiple product image uploads
+func (fc *FileController) UploadProductImages(c *gin.Context) {
+	// Get all files from the form-data with the key "product_images"
+	form, err := c.MultipartForm()
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "File not provided"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse multipart form"})
+		return
+	}
+	files := form.File["product_images"]
+	if len(files) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No files provided"})
 		return
 	}
 
-	filename, err := service.UploadProductImage(file)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+	var results []map[string]interface{}
+	for _, file := range files {
+		// Call service to handle each file upload
+		filename, err := service.UploadProductImage(file)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		results = append(results, filename)
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"file": filename,
-	})
+	// Return an array of filenames for all uploaded files
+	c.JSON(http.StatusOK, gin.H{"files": results})
 }
+
 
 
 // Base64Upload handles the POST request for uploading a base64 encoded image
