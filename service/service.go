@@ -78,7 +78,7 @@ func UploadFile(file *multipart.FileHeader) (map[string]interface{}, error) {
 
 	// Save metadata in the database, excluding the extension
 	fileRecord := models.File{
-		Filename:     fileName, // Save only the base name without extension
+		Filename:     fileName, 
 		OriginalName: file.Filename,
 		MimeType:     file.Header.Get("Content-Type"),
 		Path:         filePath,
@@ -101,3 +101,60 @@ func UploadFile(file *multipart.FileHeader) (map[string]interface{}, error) {
 
 	return response, nil
 }
+
+// UploadProductImage handles saving an image specifically for products
+func UploadProductImage(file *multipart.FileHeader) (map[string]interface{}, error) {
+	uploadFolder := "public/uploads/products"
+	if err := os.MkdirAll(uploadFolder, os.ModePerm); err != nil {
+		return nil, errors.New("failed to create upload directory")
+	}
+
+	// Generate a unique file name without extension
+	fileName := uuid.New().String() // No file extension added here
+	filePath := filepath.Join(uploadFolder, fileName)
+
+	// Open the uploaded file
+	src, err := file.Open()
+	if err != nil {
+		return nil, errors.New("failed to open uploaded file")
+	}
+	defer src.Close()
+
+	// Create destination file
+	dst, err := os.Create(filePath)
+	if err != nil {
+		return nil, errors.New("failed to create destination file")
+	}
+	defer dst.Close()
+
+	// Copy file content
+	if _, err := dst.ReadFrom(src); err != nil {
+		return nil, errors.New("failed to save file")
+	}
+
+	// Save metadata in the database, excluding the extension
+	fileRecord := models.FileProduct{
+		Filename:     fileName, 
+		OriginalName: file.Filename,
+		MimeType:     file.Header.Get("Content-Type"),
+		Path:         filePath,
+		Size:         file.Size,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
+	}
+
+	if err := models.DB.Create(&fileRecord).Error; err != nil {
+		return nil, err
+	}
+
+	// Prepare the response with detailed metadata
+	response := map[string]interface{}{
+		"uri":          fileName,
+		"originalname": file.Filename,
+		"mimetype":     file.Header.Get("Content-Type"),
+		"size":         file.Size,
+	}
+
+	return response, nil
+}
+
