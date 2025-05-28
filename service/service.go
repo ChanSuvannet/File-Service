@@ -110,7 +110,7 @@ func UploadProductImage(file *multipart.FileHeader) (map[string]interface{}, err
 	}
 
 	// Generate a unique file name without extension
-	fileName := uuid.New().String() + filepath.Ext(file.Filename) // Include extension
+	fileName := uuid.New().String() // Include extension
 	filePath := filepath.Join(uploadFolder, fileName)
 
 	// Open the uploaded file
@@ -134,7 +134,7 @@ func UploadProductImage(file *multipart.FileHeader) (map[string]interface{}, err
 
 	// Save metadata in the database, excluding the extension
 	fileRecord := models.FileProduct{
-		Filename:     fileName, 
+		Filename:     fileName,
 		OriginalName: file.Filename,
 		MimeType:     file.Header.Get("Content-Type"),
 		Path:         filePath,
