@@ -58,7 +58,7 @@ func ConnectDB() (*gorm.DB, error) {
 	// Initialize the DB global variable in models
 	models.DB = db
 
-	if err := db.AutoMigrate(&models.FileProduct{}); err != nil {
+	if err := db.AutoMigrate(&models.File{}); err != nil {
 		return nil, fmt.Errorf("auto migration failed: %w", err)
 	}
 
