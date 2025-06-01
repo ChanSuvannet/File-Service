@@ -104,7 +104,7 @@ func UploadFile(file *multipart.FileHeader) (map[string]interface{}, error) {
 
 // UploadProductImage handles saving an image specifically for products
 func UploadProductImage(file *multipart.FileHeader) (map[string]interface{}, error) {
-	uploadFolder := "public/uploads/products"
+	uploadFolder := "public/uploads"
 	if err := os.MkdirAll(uploadFolder, os.ModePerm); err != nil {
 		return nil, errors.New("failed to create upload directory")
 	}
@@ -133,7 +133,7 @@ func UploadProductImage(file *multipart.FileHeader) (map[string]interface{}, err
 	}
 
 	// Save metadata in the database, excluding the extension
-	fileRecord := models.FileProduct{
+	fileRecord := models.File{
 		Filename:     fileName,
 		OriginalName: file.Filename,
 		MimeType:     file.Header.Get("Content-Type"),

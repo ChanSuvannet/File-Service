@@ -47,33 +47,6 @@ func (fc *FileController) Upload(c *gin.Context) {
 	})
 }
 
-// For Controller Upload and Get Product Image
-
-// Function to handle get all file from database
-func (fc *FileController) GetProductImage(c *gin.Context) {
-	filename := c.Param("filename")
-
-	// Construct full path
-	fullPath := filepath.Join("public", "uploads", "products", filename)
-
-	// Security: Prevent directory traversal
-	if strings.Contains(filename, "../") {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Invalid filename"})
-		return
-	}
-
-	// Check if the file exists
-	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Image not found"})
-		return
-	}
-
-	// Serve the file
-	c.File(fullPath)
-}
-
-
-// UploadProductImage handles product image uploads specifically
 // UploadProductImages handles multiple product image uploads
 func (fc *FileController) UploadProductImages(c *gin.Context) {
 	// Get all files from the form-data with the key "product_images"
