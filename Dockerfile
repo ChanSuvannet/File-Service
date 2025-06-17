@@ -1,35 +1,50 @@
-# First stage: build the Go binary
+# ===========================
+# Build Stage
+# ===========================
 FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
 
-# Install git (for go modules that might need it)
+# Install git for go modules
 RUN apk add --no-cache git
 
-# Copy go.mod and go.sum first (for better caching)
+# Copy go.mod and go.sum for caching
 COPY go.mod go.sum ./
+
+# Download dependencies
 RUN go mod download
 
-# Copy the rest of the app
+# Copy source code
 COPY . .
 
-# Build binary
-RUN go build -o app .
+# Build binary with optimizations
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o app .
 
-# Final stage: production-ready image using distroless
-FROM gcr.io/distroless/base
+# ===========================
+# Production Stage
+# ===========================
+FROM alpine:3.18
 
 WORKDIR /app
 
-# Copy built binary
-COPY --from=builder /app/app .
+# Create non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-# Copy necessary folders
-COPY view /app/view
-COPY public /app/public
+# Copy binary and necessary folders
+COPY --from=builder /app/app ./
+COPY --from=builder /app/view ./view
+COPY --from=builder /app/public ./public
+
+# Ensure upload directory exists and is writable
+RUN mkdir -p /app/public/uploads \
+    && chown -R appuser:appgroup /app/public \
+    && chmod -R 755 /app/public
+
+# Set non-root user
+USER appuser
 
 # Expose the port
 EXPOSE 8080
 
 # Start the application
-CMD ["/app/app"]
+CMD ["./app"]
