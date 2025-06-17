@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"mime"
 	"mime/multipart"
 	"my-project/models"
 	"os"
@@ -13,34 +14,52 @@ import (
 	"gorm.io/gorm"
 )
 
-// ReadFile reads a file from the database and serves it
+// ReadFile reads a file from the database or serves it from the public folder if not found in DB
 func ReadFile(filename string, download bool, c *gin.Context) error {
 	var file models.File
 
-	// Fetch file details from the database using the filename
-	if err := models.DB.Where("filename = ?", filename).First(&file).Error; err != nil {
+	// Try fetching file details from the database
+	err := models.DB.Where("filename = ?", filename).First(&file).Error
+	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errors.New("file not found in database")
+			// Fallback: Try serving from public folder
+			publicPath := filepath.Join("public/static", filename)
+
+			if _, err := os.Stat(publicPath); os.IsNotExist(err) {
+				return errors.New("file not found in database or public folder")
+			}
+
+			// Optionally detect MIME type based on extension
+			mimeType := mime.TypeByExtension(filepath.Ext(publicPath))
+			if mimeType == "" {
+				mimeType = "application/octet-stream"
+			}
+
+			c.Header("Content-Type", mimeType)
+			if download {
+				c.Header("Content-Disposition", "attachment; filename="+filepath.Base(publicPath))
+			} else {
+				c.Header("Content-Disposition", "inline; filename="+filepath.Base(publicPath))
+			}
+
+			c.File(publicPath)
+			return nil
 		}
 		return err
 	}
 
-	// Check if the file exists in the specified path
+	// If found in DB, ensure file exists
 	if _, err := os.Stat(file.Path); os.IsNotExist(err) {
-		return errors.New("file not found on disk")
+		return errors.New("file found in database but missing on disk")
 	}
 
-	// Set the correct content type (MIME type) for the response based on the file
 	c.Header("Content-Type", file.MimeType)
-
-	// Serve the file as an attachment if requested
 	if download {
 		c.Header("Content-Disposition", "attachment; filename="+file.OriginalName)
 	} else {
 		c.Header("Content-Disposition", "inline; filename="+file.OriginalName)
 	}
 
-	// Send the file to the client
 	c.File(file.Path)
 	return nil
 }
@@ -78,7 +97,7 @@ func UploadFile(file *multipart.FileHeader) (map[string]interface{}, error) {
 
 	// Save metadata in the database, excluding the extension
 	fileRecord := models.File{
-		Filename:     fileName, 
+		Filename:     fileName,
 		OriginalName: file.Filename,
 		MimeType:     file.Header.Get("Content-Type"),
 		Path:         filePath,
@@ -157,5 +176,3 @@ func UploadProductImage(file *multipart.FileHeader) (map[string]interface{}, err
 
 	return response, nil
 }
-
-
